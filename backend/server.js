@@ -51,15 +51,11 @@ function pollForCBOM(githubUrl, res, attempts = 24) {
 
           const cboms = JSON.parse(cbomData);
 
-          // Find CBOM for the requested GitHub repository
           const matchingCBOM = cboms.find(
             (item) => item.gitUrl === githubUrl
           );
 
 
-          // ===============================
-          // CBOM FOUND
-          // ===============================
 
           if (matchingCBOM) {
 
@@ -75,9 +71,7 @@ function pollForCBOM(githubUrl, res, attempts = 24) {
           }
 
 
-          // ===============================
-          // TIMEOUT
-          // ===============================
+          
 
           if (attempts <= 1) {
 
@@ -91,9 +85,7 @@ function pollForCBOM(githubUrl, res, attempts = 24) {
           }
 
 
-          // ===============================
-          // CHECK AGAIN AFTER 5 SECONDS
-          // ===============================
+         
 
           console.log(
             "CBOM not ready. Checking again in 5 seconds..."
@@ -123,9 +115,7 @@ function pollForCBOM(githubUrl, res, attempts = 24) {
   );
 
 
-  // ===============================
-  // CONNECTION ERROR
-  // ===============================
+  
 
   getCBOM.on("error", (error) => {
 
@@ -151,9 +141,7 @@ app.post("/api/cbom/generate", (req, res) => {
   const { githubUrl } = req.body;
 
 
-  // ===============================
-  // CHECK URL
-  // ===============================
+  
 
   if (!githubUrl) {
 
@@ -166,18 +154,13 @@ app.post("/api/cbom/generate", (req, res) => {
   console.log("Received GitHub URL:", githubUrl);
 
 
-  // ===============================
-  // DATA FOR CBOMKIT
-  // ===============================
-
+  
   const data = JSON.stringify({
     scanUrl: githubUrl,
   });
 
 
-  // ===============================
-  // CBOMKIT SCAN REQUEST
-  // ===============================
+  
   const cbomkitUrl = new URL(
     "/api/v1/scan",
     CBOMKIT_URL
@@ -209,9 +192,7 @@ app.post("/api/cbom/generate", (req, res) => {
 
       response.on("end", () => {
 
-        // ===============================
-        // SCAN DID NOT START
-        // ===============================
+        
 
         if (response.statusCode !== 202) {
 
@@ -230,9 +211,7 @@ app.post("/api/cbom/generate", (req, res) => {
         }
 
 
-        // ===============================
-        // SCAN STARTED
-        // ===============================
+        
 
         console.log(
           "Scan started:",
@@ -240,9 +219,7 @@ app.post("/api/cbom/generate", (req, res) => {
         );
 
 
-        // ===============================
-        // START POLLING
-        // ===============================
+        
 
         pollForCBOM(
           githubUrl,
@@ -254,10 +231,7 @@ app.post("/api/cbom/generate", (req, res) => {
   );
 
 
-  // ===============================
-  // REQUEST ERROR
-  // ===============================
-
+  
   request.on("error", (error) => {
 
     console.error(
@@ -275,16 +249,13 @@ app.post("/api/cbom/generate", (req, res) => {
   });
 
 
-  // Send request to CBOMkit
   request.write(data);
 
   request.end();
 });
 
 
-// ===============================
-// START SERVER
-// ===============================
+
 app.post("/api/website/scan", async (req, res) => {
   const { websiteUrl } = req.body;
 

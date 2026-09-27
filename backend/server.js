@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
@@ -8,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
+const CBOMKIT_URL  = process.env.CBOMKIT_URL || "http://localhost:8081";
 
 app.get("/", (req, res) => {
   res.json({
@@ -22,12 +23,16 @@ app.get("/", (req, res) => {
 function pollForCBOM(githubUrl, res, attempts = 24) {
 
   console.log(`Checking for CBOM... attempts left: ${attempts}`);
+  const cbomkitUrl = new URL(
+    "/api/v1/cbom/last/10",
+    CBOMKIT_URL
+  );
 
   const getCBOM = http.request(
     {
-      hostname: "localhost",
-      port: 8081,
-      path: "/api/v1/cbom/last/10",
+      hostname: cbomkitUrl.hostname,
+      port: cbomkitUrl.port || 80,
+      path: cbomkitUrl.pathname,
       method: "GET",
     },
 
@@ -173,16 +178,18 @@ app.post("/api/cbom/generate", (req, res) => {
   // ===============================
   // CBOMKIT SCAN REQUEST
   // ===============================
-
+  const cbomkitUrl = new URL(
+    "/api/v1/scan",
+    CBOMKIT_URL
+  );
   const options = {
 
-    hostname: "localhost",
-
-    port: 8081,
-
-    path: "/api/v1/scan",
-
+    hostname: cbomkitUrl.hostname,
+    port: cbomkitUrl.port || 80,
+    path: cbomkitUrl.pathname,
     method: "POST",
+
+   
 
     headers: {
       "Content-Type": "application/json",
@@ -309,10 +316,8 @@ app.post("/api/website/scan", async (req, res) => {
     });
   }
 });
-app.listen(5000, () => {
+const PORT = process.env.PORT || 5000;
 
-  console.log(
-    "Backend running on http://localhost:5000"
-  );
-
+app.listen(PORT, () => {
+  console.log(`Backend running on port ${PORT}`);
 });

@@ -1,20 +1,20 @@
 import React, { useMemo, useState, useEffect } from "react";
 import "./App.css";
-
+import CryptoInventoryPage from "./assets/cryptoInventory";
 const API = "http://localhost:5000";
 
 
 const CHART_COLORS = [
-  "#6366f1", // indigo
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#f43f5e", // rose
-  "#f97316", // orange
-  "#f59e0b", // amber
-  "#06b6d4", // cyan
-  "#0ea5e9", // sky
-  "#14b8a6", // teal
-  "#a855f7", // purple
+  "#6366f1", 
+  "#8b5cf6", 
+  "#ec4899", 
+  "#f43f5e", 
+  "#f97316", 
+  "#f59e0b", 
+  "#06b6d4", 
+  "#0ea5e9", 
+  "#14b8a6", 
+  "#a855f7", 
 ];
 
 function App() {
@@ -45,6 +45,59 @@ function App() {
   /* ----------------------------------------------------------
      Helpers
   ---------------------------------------------------------- */
+  /* ==========================================================
+   Download CBOM as a JSON file (CycloneDX format)
+========================================================== */
+
+function downloadCbom(cbom, filename) {
+  if (!cbom) return;
+
+  // Pretty-print with 2-space indent — matches CycloneDX spec examples
+  const json = JSON.stringify(cbom, null, 2);
+
+  const blob = new Blob([json], {
+    type: "application/json;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  // Build a safe filename from the repo / website URL
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .slice(0, 19);
+
+  link.href = url;
+  link.download = filename || `cbom-${stamp}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/* ==========================================================
+   Derive a clean filename from the scanned URL
+========================================================== */
+
+function buildCbomFilename(scannedUrl, scanType) {
+  if (!scannedUrl) return null;
+  try {
+    const u = new URL(scannedUrl);
+    const parts = u.pathname
+      .replace(/^\/+/, "")
+      .replace(/\.git$/, "")
+      .split("/")
+      .filter(Boolean);
+
+    if (scanType === "github" && parts.length >= 2) {
+      return `cbom-${parts[0]}-${parts[1]}.json`;
+    }
+    return `cbom-${u.hostname.replace(/\./g, "-")}.json`;
+  } catch {
+    return null;
+  }
+}
   const getOccurrences = (asset) =>
     Array.isArray(asset?.evidence?.occurrences)
       ? asset.evidence.occurrences
@@ -527,7 +580,7 @@ function App() {
               <span className="overline">CRYPTOGRAPHIC INTELLIGENCE</span>
               <h1>
                 Understand your
-                <span> cryptographic </span>
+                <span className="cpAccent"> cryptographic </span>
                 attack surface.
               </h1>
               <p>
@@ -652,7 +705,10 @@ function App() {
                 }}
               />
             </section>
-
+            {cbom?.components?.length > 0 && (
+              <CryptoInventoryPage cbom={cbom} />
+            )}
+            
             <section className="panel inventory">
               <div className="inventoryHeader">
                 <div>
@@ -950,7 +1006,6 @@ function AssetMap({ assets, onAsset }) {
       <div className="mapOrbit orbit3" />
       <div className="mapOrbit orbit4" />
 
-      {/* Decorative floating dots — also colorized */}
       <div className="orbitBall ball1" />
       <div className="orbitBall ball2" />
       <div className="orbitBall ball3" />
@@ -966,10 +1021,8 @@ function AssetMap({ assets, onAsset }) {
         const radius = 120 + (index % 3) * 55;
         const size = 58 + (item.count / max) * 48;
 
-        // Pick a color from the shared palette (loops if more assets than colors)
         const color = CHART_COLORS[index % CHART_COLORS.length];
 
-        // Convert hex → rgb so we can build rgba() glow colors
         const hexToRgb = (hex) => {
           const h = hex.replace("#", "");
           const bigint = parseInt(
@@ -1227,9 +1280,7 @@ function Topology({ files, assetNodes, onAsset }) {
           CRYPTO ASSETS
         </text>
 
-        {/* CONNECTIONS — one path per (file → asset-id) pair.
-            Dynamic control points + vertical spread make every
-            connection visible even when source.y === target.y. */}
+        
         {files.flatMap(([file, list]) =>
           list.map((node, k) => {
             const source = filePositions[file];
@@ -1238,10 +1289,7 @@ function Topology({ files, assetNodes, onAsset }) {
 
             const dy = target.y - source.y;
 
-            // When source & target share the same Y, arc the curve
-            // gently so the two endpoints don't visually collapse.
-            // Also alternate direction slightly to avoid overlapping
-            // when multiple assets connect to the same file.
+            
             const sameRow = dy === 0;
             const dir = k % 2 === 0 ? 1 : -1;
             const spread = sameRow ? 45 * dir : 0;
